@@ -1,12 +1,119 @@
 #!ipxe
 ###
-### netboot.xyz-custom menu
+### netboot.xyz-custom menu example
 ###
 
-:start
-echo Hello world!
-sleep 10
+:custom
+clear custom_choice
+menu RELOPS Linux HW PXE Menu - 07/2025
+item --gap Ubuntu 18.04
+item ubuntu1804-preseed ${space} Image with Preseed
+item ubuntu1804-ubuntu ${space} Run Installer - archive.ubuntu.com
+item ubuntu1804-data.mdc1 ${space} Run Installer - MDC1
+item --gap Ubuntu 24.04
+# item ubuntu2404-autoinstall ${space} Image with Autoinstall
+item ubuntu2404-installer ${space} Run Installer - Try 45
+# item ubuntu2404-installer2 ${space} Run Installer - Advanced
+choose custom_choice || goto custom_exit
+echo ${cls}
+goto ${custom_choice}
 goto custom_exit
 
+
+#  _     _             _
+# | |__ (_) ___  _ __ (_) ___
+# | '_ \| |/ _ \| '_ \| |/ __|
+# | |_) | | (_) | | | | | (__
+# |_.__/|_|\___/|_| |_|_|\___|
+
+# from archive.ubuntu.com
+:ubuntu1804-ubuntu
+echo Using Ubuntu 18.04 Installer...
+# WORKING
+kernel http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux auto=true priority=critical vga=788 initrd=initrd.gz ---
+initrd http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+boot || goto custom_exit
+
+
+# use data.srv.releng.mdc1.mozilla.com
+:ubuntu1804-data.mdc1
+echo Using Ubuntu 18.04 Installer...
+# WORKING: needed to fix initrd= to correct name
+kernel http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz ---
+initrd http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.initrd.gz
+boot || goto custom_exit
+
+# working entry from IT pxe server
+#
+#   Ubuntu-18.04.5-x86_64-server-moonshot:
+#     menu: linux_ubuntu
+#     label: 'Ubuntu-18.04.5-x86_64-server ^moonshot'
+#     image: 'Ubuntu-18.04.5-x86_64-server'
+#     append: 'modprobe.blacklist=ahci inst.dd'
+#     kernel_name: linux
+#     initrd_name: initrd.gz
+#     append: 'auto=true url=http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/ubuntu_18.04_x64_moonshot.preseed priority=critical interface=auto'
+
+# 1804 preseed
+:ubuntu1804-preseed
+echo Using Ubuntu 18.04 with Preseed...
+# WORKING!
+kernel http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz auto=true url=http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/ubuntu_18.04_x64_moonshot.preseed priority=critical interface=auto ---
+initrd http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.initrd.gz
+boot || goto custom_exit
+
+
+
+#              _     _
+#  _ __   ___ | |__ | | ___
+# | '_ \ / _ \| '_ \| |/ _ \
+# | | | | (_) | |_) | |  __/
+# |_| |_|\___/|_.__/|_|\___|
+
+# see https://netboot.xyz/docs/kb/pxe/ubuntu/ for more info
+
+:ubuntu2404-installer
+echo Using Ubuntu 24.04 Installer...
+# use netboot.xyz's ubuntu-squash release
+#   get latest versions from https://github.com/netbootxyz/ubuntu-squash/releases?q=24.04&expanded=true
+# NOT WORKING: freezes around loading certs in dmesg output
+#   - not sure why. kernel options were pulled from netboot.xyz's ubuntu 24.04 entry that works
+# kernel https://github.com/netbootxyz/ubuntu-squash/releases/download/24.04.2-dac09526/vmlinuz cloud-config-url=/dev/null ip=dhcp url=http://releases.ubuntu.com/noble/ubuntu-24.04.2-live-server-amd64.iso initrd=initrd.magic console=tty0 console=ttyS0,115200n8
+# initrd https://github.com/netbootxyz/ubuntu-squash/releases/download/24.04.2-dac09526/initrd
+# boot || goto custom_exit
+set base-url http://10.49.56.20:80/ubuntu/
+kernel ${base-url}/casper/vmlinuz
+initrd ${base-url}/casper/initrd
+set ubuntu_iso_url ${base-url}/ubuntu-24.04.2-live-server-amd64.iso
+imgargs vmlinuz initrd=initrd ip=dhcp cloud-config-url=/dev/null url=${ubuntu_iso_url} autoinstall ds=nocloud-net;s=${base-url}/
+boot || goto custom_exit
+
+:ubuntu2404-installer2
+echo Using Ubuntu 24.04 Installer...
+# NOT WORKING: files don't exist
+chain 2404.ipxe || goto custom
+
+:ubuntu2404-autoinstall
+echo Using Ubuntu 24.04 with Autoinstall...
+echo "Not implemented yet."
+sleep 15
+goto custom_exit
+
+# :option_one
+# kernel http://path.to/vmlinuz
+# initrd http://path.to/initrd
+# imgargs vmlinuz put_kernel_img_args_here
+# boot || goto custom_exit
+
+# :option_two
+# kernel https://boot.netboot.xyz/memdisk raw iso
+# initrd http://path.to/iso
+# boot || goto custom_exit
+
+# :option_three
+# echo Chains into another menu...
+# chain https://raw.githubusercontent.com/${github_user}/netboot.xyz-custom/master/custom1.ipxe || goto custom
+
 :custom_exit
-exit 0
+chain utils.ipxe
+exit
