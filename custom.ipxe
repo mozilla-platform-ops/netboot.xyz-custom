@@ -81,8 +81,58 @@ boot || goto custom_exit
 :ubuntu2404-installer
 echo Using Ubuntu 24.04 Installer...
 # WORKING!!!
-chain https://raw.githubusercontent.com/aerickson/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe || goto custom
+
+# Set variables
+set arch amd64
+set codename noble
+set version_number 24.04.2
+set kernel_url https://github.com/netbootxyz/ubuntu-squash/releases/download/24.04.2-dac09526/
+set ubuntu_iso_url http://releases.ubuntu.com/${codename}/ubuntu-${version_number}-live-server-${arch}.iso
+
+# Optional: Detect DHCP and set netboot parameters
+isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
+
+# Clear any previous images
+imgfree
+
+# Boot message
+echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
+
+# Load kernel and initrd
+kernel ${kernel_url}vmlinuz root=/dev/ram0 ramdisk_size=3500000 cloud-config-url=/dev/null ${netboot_params} initrd=initrd.magic
+initrd ${kernel_url}initrd
+
+# Display checksums (optional)
+echo
+echo MD5sums:
+md5sum vmlinuz initrd
+
+# Boot the installer
+boot || goto custom_exit
 
 :ubuntu2404-autoinstall
-chain https://raw.githubusercontent.com/aerickson/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe || goto custom
+echo Using Ubuntu 24.04 Autoinstall...
+
+set arch amd64
+set codename noble
+set version_number 24.04.2
+set kernel_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/casper/
+set ubuntu_iso_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/ubuntu-24.04.2-live-server-amd64.iso
+set autoinstall_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu
+
+isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
+
+imgfree
+
+echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
+
+kernel ${kernel_url}vmlinuz \
+  root=/dev/ram0 ramdisk_size=3500000 \
+  ${netboot_params} \
+  autoinstall \
+  ds=nocloud-net;s=${autoinstall_url}/
+
+initrd ${kernel_url}initrd
+
+boot || goto custom_exit
 
