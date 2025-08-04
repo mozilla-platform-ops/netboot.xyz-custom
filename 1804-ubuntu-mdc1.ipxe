@@ -1,0 +1,14 @@
+#!ipxe
+
+echo ===> Entered ubuntu1804-data.mdc1
+set kernel_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/
+echo Kernel: ${kernel_url}u18.linux
+echo Initrd: ${kernel_url}u18.initrd.gz
+sleep 2
+
+imgfetch ${kernel_url}u18.linux || goto load_fail
+imgfetch ${kernel_url}u18.initrd.gz || goto load_fail
+
+kernel ${kernel_url}u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz ---
+initrd ${kernel_url}u18.initrd.gz
+boot || goto load_fail
