@@ -1,24 +1,88 @@
 #!ipxe
 
-set arch amd64
-set codename noble
-set version_number 24.04.2
-set kernel_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/casper/
-set ubuntu_iso_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/ubuntu-24.04.2-live-server-amd64.iso
-set autoinstall_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu
+#                  _
+#  _ __ ___   __ _(_)_ __    _ __ ___   ___ _ __  _   _
+# | '_ ` _ \ / _` | | '_ \  | '_ ` _ \ / _ \ '_ \| | | |
+# | | | | | | (_| | | | | | | | | | | |  __/ | | | |_| |
+# |_| |_| |_|\__,_|_|_| |_| |_| |_| |_|\___|_| |_|\__,_|
+#
 
-isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
+:custom
+console --picture http://boot.ipxe.org/ipxe.png
+clear custom_choice
+menu RELOPS Linux HW PXE Menu - 07/2025
+item --gap Ubuntu 18.04 Server
+item ubuntu1804-preseed ${space} Image with Preseed (WORKING)
+item ubuntu1804-ubuntu ${space} Run Installer - archive.ubuntu.com (WORKING)
+item ubuntu1804-data.mdc1 ${space} Run Installer - MDC1 (WORKING)
+item --gap Ubuntu 24.04 Server
+item ubuntu2404-installer ${space} Run Installer - Remote (WORKING)
+item ubuntu2404-autoinstall ${space} Run Autoinstall
+echo ${cls}
+goto ${custom_choice}
+goto custom_exit
 
-imgfree
+:custom_exit
+chain utils.ipxe
+exit
 
-echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
 
-kernel ${kernel_url}vmlinuz \
-  root=/dev/ram0 ramdisk_size=3500000 \
-  ${netboot_params} \
-  autoinstall \
-  ds=nocloud-net;s=${autoinstall_url}/
+#  _     _             _
+# | |__ (_) ___  _ __ (_) ___      ___  ___ _ ____   _____ _ __
+# | '_ \| |/ _ \| '_ \| |/ __|____/ __|/ _ \ '__\ \ / / _ \ '__|
+# | |_) | | (_) | | | | | (_|_____\__ \  __/ |   \ V /  __/ |
+# |_.__/|_|\___/|_| |_|_|\___|    |___/\___|_|    \_/ \___|_|
+#
 
-initrd ${kernel_url}initrd
+# from archive.ubuntu.com
+:ubuntu1804-ubuntu
+echo Using Ubuntu 18.04 Installer...
+# WORKING
+kernel http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux auto=true priority=critical vga=788 initrd=initrd.gz ---
+initrd http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+boot || goto custom_exit
 
-boot
+
+# use data.srv.releng.mdc1.mozilla.com
+:ubuntu1804-data.mdc1
+echo Using Ubuntu 18.04 Installer...
+# WORKING: needed to fix initrd= to correct name
+kernel http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz ---
+initrd http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.initrd.gz
+boot || goto custom_exit
+
+# working entry from IT pxe server
+#
+#   Ubuntu-18.04.5-x86_64-server-moonshot:
+#     menu: linux_ubuntu
+#     label: 'Ubuntu-18.04.5-x86_64-server ^moonshot'
+#     image: 'Ubuntu-18.04.5-x86_64-server'
+#     append: 'modprobe.blacklist=ahci inst.dd'
+#     kernel_name: linux
+#     initrd_name: initrd.gz
+#     append: 'auto=true url=http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/ubuntu_18.04_x64_moonshot.preseed priority=critical interface=auto'
+
+# 1804 preseed
+:ubuntu1804-preseed
+echo Using Ubuntu 18.04 with Preseed...
+# WORKING!
+kernel http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz auto=true url=http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/ubuntu_18.04_x64_moonshot.preseed priority=critical interface=auto ---
+initrd http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/u18.initrd.gz
+boot || goto custom_exit
+
+
+#              _     _
+#  _ __   ___ | |__ | | ___       ___  ___ _ ____   _____ _ __
+# | '_ \ / _ \| '_ \| |/ _ \_____/ __|/ _ \ '__\ \ / / _ \ '__|
+# | | | | (_) | |_) | |  __/_____\__ \  __/ |   \ V /  __/ |
+# |_| |_|\___/|_.__/|_|\___|     |___/\___|_|    \_/ \___|_|
+#
+
+:ubuntu2404-installer
+echo Using Ubuntu 24.04 Installer...
+# WORKING!!!
+chain 2404-server.ipxe || goto custom
+
+:ubuntu2404-autoinstall
+chain 2404-server-auto.ipxe || goto custom
+
