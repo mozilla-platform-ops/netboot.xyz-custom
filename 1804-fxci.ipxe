@@ -1,0 +1,16 @@
+#!ipxe
+
+echo ===> Entered ubuntu1804-preseed
+set kernel_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/
+set preseed_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/ubuntu_18.04_x64_moonshot.preseed
+echo Kernel: ${kernel_url}u18.linux
+echo Initrd: ${kernel_url}u18.initrd.gz
+echo Preseed: ${preseed_url}
+sleep 2
+
+imgfetch ${kernel_url}u18.linux || goto load_fail
+imgfetch ${kernel_url}u18.initrd.gz || goto load_fail
+
+kernel ${kernel_url}u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz auto=true url=${preseed_url} priority=critical interface=auto ---
+initrd ${kernel_url}u18.initrd.gz
+boot || goto load_fail
