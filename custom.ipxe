@@ -16,16 +16,105 @@ echo ${cls}
 goto ${custom_choice}
 
 :ubuntu1804-ubuntu
-chain https://raw.githubusercontent.com/mozilla-platform-ops/netboot.xyz-custom/refs/heads/master/1804-ubuntu-hosted.ipxe
+echo ===> Entered ubuntu1804-ubuntu
+set kernel_url http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/
+echo Kernel: ${kernel_url}linux
+echo Initrd: ${kernel_url}initrd.gz
+sleep 2
+
+imgfetch ${kernel_url}linux || goto load_fail
+imgfetch ${kernel_url}initrd.gz || goto load_fail
+
+echo Files fetched successfully. Booting...
+kernel ${kernel_url}linux auto=true priority=critical vga=788 initrd=initrd.gz ---
+initrd ${kernel_url}initrd.gz
+boot || goto load_fail
 
 :ubuntu1804-data.mdc1
-chain https://raw.githubusercontent.com/mozilla-platform-ops/netboot.xyz-custom/refs/heads/master/1804-ubuntu-mdc1.ipxe
+echo ===> Entered ubuntu1804-data.mdc1
+set kernel_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/
+echo Kernel: ${kernel_url}u18.linux
+echo Initrd: ${kernel_url}u18.initrd.gz
+sleep 2
+
+imgfetch ${kernel_url}u18.linux || goto load_fail
+imgfetch ${kernel_url}u18.initrd.gz || goto load_fail
+
+kernel ${kernel_url}u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz ---
+initrd ${kernel_url}u18.initrd.gz
+boot || goto load_fail
 
 :ubuntu1804-auto
-chain https://raw.githubusercontent.com/mozilla-platform-ops/netboot.xyz-custom/refs/heads/master/1804-fxci.ipxe
+echo ===> Entered ubuntu1804-preseed
+set kernel_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/
+set preseed_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/ubuntu_18.04_x64_moonshot.preseed
+echo Kernel: ${kernel_url}u18.linux
+echo Initrd: ${kernel_url}u18.initrd.gz
+echo Preseed: ${preseed_url}
+sleep 2
+
+imgfetch ${kernel_url}u18.linux || goto load_fail
+imgfetch ${kernel_url}u18.initrd.gz || goto load_fail
+
+kernel ${kernel_url}u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz auto=true url=${preseed_url} priority=critical interface=auto ---
+initrd ${kernel_url}u18.initrd.gz
+boot || goto load_fail
 
 :ubuntu2404-auto
-chain https://raw.githubusercontent.com/mozilla-platform-ops/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe
+echo ===> Entered ubuntu2404-installer
+set arch amd64
+set codename noble
+set version_number 24.04.2
+set kernel_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/casper/
+set ubuntu_iso_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/ubuntu-24.04.2-live-server-amd64.iso
+set autoinstall_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu
+
+isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
+
+imgfree
+
+echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
+
+kernel ${kernel_url}vmlinuz \
+  root=/dev/ram0 ramdisk_size=3500000 \
+  ${netboot_params} \
+  autoinstall \
+  ds=nocloud-net;s=${autoinstall_url}/
+
+initrd ${kernel_url}initrd
+
+boot
 
 :ubuntu2404-hosted
-chain https://raw.githubusercontent.com/mozilla-platform-ops/netboot.xyz-custom/refs/heads/master/2404-server.ipxe
+#!ipxe
+
+# copy of netboot.xyz's 2404 installer
+# WORKING!
+
+# Set variables
+set arch amd64
+set codename noble
+set version_number 24.04.2
+set kernel_url https://github.com/netbootxyz/ubuntu-squash/releases/download/24.04.2-dac09526/
+set ubuntu_iso_url http://releases.ubuntu.com/${codename}/ubuntu-${version_number}-live-server-${arch}.iso
+
+# Optional: Detect DHCP and set netboot parameters
+isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
+
+# Clear any previous images
+imgfree
+
+# Boot message
+echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
+
+# Load kernel and initrd
+kernel ${kernel_url}vmlinuz root=/dev/ram0 ramdisk_size=3500000 cloud-config-url=/dev/null ${netboot_params} initrd=initrd.magic
+initrd ${kernel_url}initrd
+
+# Display checksums (optional)
+echo
+echo MD5sums:
+md5sum vmlinuz initrd
+
+# Boot the installer
+boot
