@@ -63,9 +63,28 @@ boot || goto load_fail
 
 :ubuntu2404-installer
 echo ===> Entered ubuntu2404-installer
-echo This entry is currently unimplemented.
-sleep 3
-goto custom
+set arch amd64
+set codename noble
+set version_number 24.04.2
+set kernel_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/casper/
+set ubuntu_iso_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/ubuntu-24.04.2-live-server-amd64.iso
+set autoinstall_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu
+
+isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
+
+imgfree
+
+echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
+
+kernel ${kernel_url}vmlinuz \
+  root=/dev/ram0 ramdisk_size=3500000 \
+  ${netboot_params} \
+  autoinstall \
+  ds=nocloud-net;s=${autoinstall_url}/
+
+initrd ${kernel_url}initrd
+
+boot || goto load_fail
 
 :load_fail
 echo ERROR: Failed to fetch kernel or initrd!
