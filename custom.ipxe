@@ -92,4 +92,4 @@ sleep 5
 goto custom
 
 :ubuntu2404-installer-github
-chain https://raw.githubusercontent.com/aerickson/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe
+chain https://raw.githubusercontent.com/mozilla-platform-ops/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe
