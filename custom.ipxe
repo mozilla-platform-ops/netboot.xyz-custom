@@ -8,9 +8,9 @@
 set arch amd64
 set codename noble
 set version_number 24.04.2
-set kernel_url https://github.com/netbootxyz/ubuntu-squash/releases/download/24.04.2-dac09526/
-set ubuntu_iso_url http://releases.ubuntu.com/${codename}/ubuntu-${version_number}-live-server-${arch}.iso
-set autoinstall_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/
+set kernel_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/casper/
+set ubuntu_iso_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/ubuntu-24.04.2-live-server-amd64.iso
+set autoinstall_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu
 
 # Optional: Detect DHCP and set netboot parameters
 isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
@@ -22,7 +22,7 @@ imgfree
 echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
 
 # Load kernel and initrd
-kernel ${kernel_url}vmlinuz root=/dev/ram0 ramdisk_size=3500000 cloud-config-url=/dev/null ${netboot_params} initrd=initrd.magic autoinstall ds=nocloud-net;s=${autoinstall_url}
+kernel ${kernel_url}vmlinuz root=/dev/ram0 ramdisk_size=3500000 cloud-config-url=/dev/null ${netboot_params} initrd=initrd.magic autoinstall ds=nocloud-net;s=${autoinstall_url}/
 initrd ${kernel_url}initrd
 
 # Display checksums (optional)
