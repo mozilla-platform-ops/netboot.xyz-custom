@@ -10,7 +10,6 @@ item ubuntu1804-ubuntu ${space} Run Installer - archive.ubuntu.com (WORKING)
 item ubuntu1804-data.mdc1 ${space} Run Installer - MDC1 (WORKING)
 item --gap Ubuntu 24.04 Server
 item ubuntu2404-installer ${space} Run Installer - Remote (WORKING)
-item ubuntu2404-autoinstall ${space} Run Autoinstall
 choose custom_choice || goto custom
 echo ${cls}
 goto ${custom_choice}
