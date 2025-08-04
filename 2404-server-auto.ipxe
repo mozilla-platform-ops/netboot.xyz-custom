@@ -1,5 +1,6 @@
 #!ipxe
 
+echo ===> Entered ubuntu2404-installer
 set arch amd64
 set codename noble
 set version_number 24.04.2

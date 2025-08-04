@@ -10,6 +10,7 @@ item ubuntu1804-ubuntu ${space} Run Installer - archive.ubuntu.com (WORKING)
 item ubuntu1804-data.mdc1 ${space} Run Installer - MDC1 (WORKING)
 item --gap Ubuntu 24.04 Server
 item ubuntu2404-installer ${space} Run Installer - Remote (WORKING)
+item ubuntu2404-installer-github ${space} Run Installer - From Github
 choose custom_choice || goto custom
 echo ${cls}
 goto ${custom_choice}
@@ -89,3 +90,6 @@ boot || goto load_fail
 echo ERROR: Failed to fetch kernel or initrd!
 sleep 5
 goto custom
+
+:ubuntu2404-installer-github
+chain https://raw.githubusercontent.com/aerickson/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe
