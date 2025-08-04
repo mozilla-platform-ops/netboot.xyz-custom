@@ -1,26 +1,73 @@
 #!ipxe
-echo Using Ubuntu 24.04 Autoinstall...
 
-set arch amd64
-set codename noble
-set version_number 24.04.2
-set kernel_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/casper/
-set ubuntu_iso_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu/ubuntu-24.04.2-live-server-amd64.iso
-set autoinstall_url http://releng-pxe1.test.releng.mdc1.mozilla.com/ubuntu
+:custom
+console --picture http://boot.ipxe.org/ipxe.png
+clear custom_choice
+menu RELOPS Linux HW PXE Menu - 07/2025
+item --gap Ubuntu 18.04 Server
+item ubuntu1804-preseed ${space} Image with Preseed (WORKING)
+item ubuntu1804-ubuntu ${space} Run Installer - archive.ubuntu.com (WORKING)
+item ubuntu1804-data.mdc1 ${space} Run Installer - MDC1 (WORKING)
+item --gap Ubuntu 24.04 Server
+item ubuntu2404-installer ${space} Run Installer - Remote (WORKING)
+item ubuntu2404-autoinstall ${space} Run Autoinstall
+choose custom_choice || goto custom
+echo ${cls}
+goto ${custom_choice}
 
-isset ${dhcp-server} && set netboot_params ip=dhcp url=${ubuntu_iso_url} || set netboot_params
 
-imgfree
+:ubuntu1804-ubuntu
+echo ===> Entered ubuntu1804-ubuntu
+set kernel_url http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/
+echo Kernel: ${kernel_url}linux
+echo Initrd: ${kernel_url}initrd.gz
+sleep 2
 
-echo Booting Ubuntu ${codename} ${version_number} for ${arch} via Subiquity
+imgfetch ${kernel_url}linux || goto load_fail
+imgfetch ${kernel_url}initrd.gz || goto load_fail
 
-kernel ${kernel_url}vmlinuz \
-  root=/dev/ram0 ramdisk_size=3500000 \
-  ${netboot_params} \
-  autoinstall \
-  ds=nocloud-net;s=${autoinstall_url}/
+echo Files fetched successfully. Booting...
+kernel ${kernel_url}linux auto=true priority=critical vga=788 initrd=initrd.gz ---
+initrd ${kernel_url}initrd.gz
+boot || goto load_fail
 
-initrd ${kernel_url}initrd
+:ubuntu1804-data.mdc1
+echo ===> Entered ubuntu1804-data.mdc1
+set kernel_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/
+echo Kernel: ${kernel_url}u18.linux
+echo Initrd: ${kernel_url}u18.initrd.gz
+sleep 2
 
-boot
+imgfetch ${kernel_url}u18.linux || goto load_fail
+imgfetch ${kernel_url}u18.initrd.gz || goto load_fail
 
+kernel ${kernel_url}u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz ---
+initrd ${kernel_url}u18.initrd.gz
+boot || goto load_fail
+
+:ubuntu1804-preseed
+echo ===> Entered ubuntu1804-preseed
+set kernel_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/
+set preseed_url http://data.srv.releng.mdc1.mozilla.com/repos/kickstart/ubuntu_18.04_x64_moonshot.preseed
+echo Kernel: ${kernel_url}u18.linux
+echo Initrd: ${kernel_url}u18.initrd.gz
+echo Preseed: ${preseed_url}
+sleep 2
+
+imgfetch ${kernel_url}u18.linux || goto load_fail
+imgfetch ${kernel_url}u18.initrd.gz || goto load_fail
+
+kernel ${kernel_url}u18.linux auto=true priority=critical vga=788 initrd=u18.initrd.gz auto=true url=${preseed_url} priority=critical interface=auto ---
+initrd ${kernel_url}u18.initrd.gz
+boot || goto load_fail
+
+:ubuntu2404-installer
+echo ===> Entered ubuntu2404-installer
+echo This entry is currently unimplemented.
+sleep 3
+goto custom
+
+:load_fail
+echo ERROR: Failed to fetch kernel or initrd!
+sleep 5
+goto custom
