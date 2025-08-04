@@ -81,8 +81,8 @@ boot || goto custom_exit
 :ubuntu2404-installer
 echo Using Ubuntu 24.04 Installer...
 # WORKING!!!
-chain 2404-server.ipxe || goto custom
+chain https://raw.githubusercontent.com/aerickson/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe || goto custom
 
 :ubuntu2404-autoinstall
-chain 2404-server-auto.ipxe || goto custom
+chain https://raw.githubusercontent.com/aerickson/netboot.xyz-custom/refs/heads/master/2404-server-auto.ipxe || goto custom
 
